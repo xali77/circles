@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FriendBet, Circle } from '@/lib/types';
 import { getProfile } from '@/lib/store';
@@ -17,6 +17,12 @@ export default function CreateBet({ isOpen, onClose, onCreate, circles }: Props)
   const [days, setDays] = useState('1');
   const [minBet, setMinBet] = useState('1');
   const [selectedCircle, setSelectedCircle] = useState<Circle | null>(circles[0] || null);
+
+  useEffect(() => {
+    if (!selectedCircle && circles.length > 0) {
+      setSelectedCircle(circles[0]);
+    }
+  }, [circles, selectedCircle]);
 
   const profile = getProfile();
 
