@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FriendBet, Bet } from '@/lib/types';
 import { formatUSD, encodeBetMemo, encodeTransferWithMemo, ALPHA_USD, explorerTxUrl, TEMPO_CHAIN } from '@/lib/tempo';
 import { useWallets } from '@privy-io/react-auth';
-import { saveBet, getProfile } from '@/lib/store';
+import { getProfile } from '@/lib/store';
+import { apiPlaceBet } from '@/lib/api';
 import { useBalance } from '@/hooks/useBalance';
 import PieChart from './PieChart';
 
@@ -73,7 +74,7 @@ export default function BetModal({ friendBet, onClose, onBetPlaced }: BetModalPr
         timestamp: Date.now(),
         txHash: confirmedHash,
       };
-      saveBet(bet);
+      await apiPlaceBet(bet);
       onBetPlaced(bet);
       setStatus('success');
     } catch (err) {

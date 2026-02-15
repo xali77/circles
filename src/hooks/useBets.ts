@@ -2,30 +2,39 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { FriendBet, Bet } from '@/lib/types';
-import { getMyFeedBets, saveFriendBet, saveBet, updateFriendBet, getBets } from '@/lib/store';
+import { fetchMyFeedBets, apiSaveFriendBet, apiUpdateFriendBet, fetchBets, apiPlaceBet } from '@/lib/api';
 
 export function useFeedBets(userAddress?: string) {
   const [feedBets, setFeedBets] = useState<FriendBet[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     if (userAddress) {
-      setFeedBets(getMyFeedBets(userAddress));
+      setLoading(true);
+      try {
+        const bets = await fetchMyFeedBets(userAddress);
+        setFeedBets(bets);
+      } catch (err) {
+        console.error('Failed to fetch feed bets:', err);
+      } finally {
+        setLoading(false);
+      }
     }
   }, [userAddress]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const createBet = useCallback((bet: FriendBet) => {
-    saveFriendBet(bet);
+  const createBet = useCallback(async (bet: FriendBet) => {
+    await apiSaveFriendBet(bet);
     refresh();
   }, [refresh]);
 
-  const resolveBet = useCallback((id: string, outcome: 'yes' | 'no') => {
-    updateFriendBet(id, { resolved: true, outcome });
+  const resolveBet = useCallback(async (id: string, outcome: 'yes' | 'no') => {
+    await apiUpdateFriendBet(id, { resolved: true, outcome });
     refresh();
   }, [refresh]);
 
-  return { feedBets, createBet, resolveBet, refresh };
+  return { feedBets, loading, createBet, resolveBet, refresh };
 }
 
 export function useUserBets(address?: string) {
@@ -33,11 +42,11 @@ export function useUserBets(address?: string) {
 
   useEffect(() => {
     if (!address) return;
-    setBets(getBets().filter((b) => b.bettor === address));
+    fetchBets(address).then(setBets).catch(console.error);
   }, [address]);
 
-  const placeBet = useCallback((bet: Bet) => {
-    saveBet(bet);
+  const placeBet = useCallback(async (bet: Bet) => {
+    await apiPlaceBet(bet);
     setBets((prev) => [bet, ...prev]);
   }, []);
 

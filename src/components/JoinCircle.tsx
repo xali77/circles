@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCircleByInviteCode, joinCircle, getProfile } from '@/lib/store';
+import { getProfile } from '@/lib/store';
+import { fetchCircleByInviteCode, apiJoinCircle } from '@/lib/api';
 import { Circle } from '@/lib/types';
 
 interface Props {
@@ -17,43 +18,55 @@ export default function JoinCircle({ isOpen, onClose, onJoined, initialCode = ''
   const [found, setFound] = useState<Circle | null>(null);
   const [error, setError] = useState('');
   const [joined, setJoined] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [joining, setJoining] = useState(false);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setError('');
     setFound(null);
     const trimmed = code.trim().toUpperCase();
     if (!trimmed) return;
 
-    const circle = getCircleByInviteCode(trimmed);
-    if (!circle) {
-      setError('no circle found with that code');
-      return;
-    }
+    setSearching(true);
+    try {
+      const circle = await fetchCircleByInviteCode(trimmed);
+      if (!circle) {
+        setError('no circle found with that code');
+        return;
+      }
 
-    const profile = getProfile();
-    if (profile && circle.members.some((m) => m.address === profile.address)) {
-      setError("you're already in this circle!");
-      return;
-    }
+      const profile = getProfile();
+      if (profile && circle.members.some((m) => m.address === profile.address)) {
+        setError("you're already in this circle!");
+        return;
+      }
 
-    setFound(circle);
+      setFound(circle);
+    } finally {
+      setSearching(false);
+    }
   };
 
-  const handleJoin = () => {
-    if (!found) return;
+  const handleJoin = async () => {
+    if (!found || joining) return;
     const profile = getProfile();
     if (!profile) return;
 
-    const success = joinCircle(found.id, {
-      address: profile.address,
-      name: profile.name,
-      avatar: profile.avatar,
-      joinedAt: Date.now(),
-    });
+    setJoining(true);
+    try {
+      const success = await apiJoinCircle(found.id, {
+        address: profile.address,
+        name: profile.name,
+        avatar: profile.avatar,
+        joinedAt: Date.now(),
+      });
 
-    if (success) {
-      setJoined(true);
-      onJoined(found);
+      if (success) {
+        setJoined(true);
+        onJoined(found);
+      }
+    } finally {
+      setJoining(false);
     }
   };
 

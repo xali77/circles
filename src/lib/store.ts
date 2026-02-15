@@ -1,4 +1,5 @@
 import { FriendBet, Bet, UserProfile, LeaderboardEntry, Badge, Circle, CircleMember } from './types';
+import { syncProfile as syncProfileToKV } from './api';
 
 const BETS_KEY = 'circles_bets';
 const FRIEND_BETS_KEY = 'circles_friend_bets';
@@ -19,6 +20,7 @@ export function saveProfile(profile: UserProfile): void {
   const all = getAllProfiles();
   all[profile.address] = profile;
   localStorage.setItem(ALL_PROFILES_KEY, JSON.stringify(all));
+  syncProfileToKV(profile).catch(console.error);
 }
 
 export function getAllProfiles(): Record<string, UserProfile> {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { usePrivy, useWallets, useExportWallet } from '@privy-io/react-auth';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import UserProfileView from '@/components/UserProfile';
@@ -9,7 +9,9 @@ import Leaderboard from '@/components/Leaderboard';
 import CircleList from '@/components/CircleList';
 import CreateCircle from '@/components/CreateCircle';
 import JoinCircle from '@/components/JoinCircle';
-import { getProfile, getMyCircles, getCircleLeaderboard, saveProfile } from '@/lib/store';
+import SendTokens from '@/components/SendTokens';
+import { getProfile, saveProfile } from '@/lib/store';
+import { fetchMyCircles, fetchCircleLeaderboard } from '@/lib/api';
 import { UserProfile, LeaderboardEntry, Badge, Circle } from '@/lib/types';
 import { useBalance } from '@/hooks/useBalance';
 import { truncateAddress, explorerAddressUrl } from '@/lib/tempo';
@@ -28,6 +30,7 @@ function getBadges(p: UserProfile): Badge[] {
 export default function ProfilePage() {
   const { ready, authenticated, logout } = usePrivy();
   const { wallets } = useWallets();
+  const { exportWallet } = useExportWallet();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [circles, setCircles] = useState<Circle[]>([]);
@@ -36,6 +39,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'stats' | 'leaderboard' | 'circles'>('stats');
   const [showCreateCircle, setShowCreateCircle] = useState(false);
   const [showJoinCircle, setShowJoinCircle] = useState(false);
+  const [showSend, setShowSend] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editingAvatar, setEditingAvatar] = useState(false);
   const [newName, setNewName] = useState('');
@@ -46,17 +50,18 @@ export default function ProfilePage() {
 
   useEffect(() => { if (ready && !authenticated) router.push('/'); }, [ready, authenticated, router]);
 
-  const refreshData = useCallback(() => {
+  const refreshData = useCallback(async () => {
     if (address) {
       const p = getProfile();
       if (p) {
         setProfile(p);
-        const myCircles = getMyCircles(address);
+        const myCircles = await fetchMyCircles(address);
         setCircles(myCircles);
         if (myCircles.length > 0) {
           const cId = selectedCircleId || myCircles[0].id;
           setSelectedCircleId(cId);
-          setLeaderboard(getCircleLeaderboard(cId));
+          const lb = await fetchCircleLeaderboard(cId);
+          setLeaderboard(lb);
         }
       }
     }
@@ -154,7 +159,7 @@ export default function ProfilePage() {
               {circles.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => { setSelectedCircleId(c.id); setLeaderboard(getCircleLeaderboard(c.id)); }}
+                  onClick={() => { setSelectedCircleId(c.id); fetchCircleLeaderboard(c.id).then(setLeaderboard); }}
                   className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
                     selectedCircleId === c.id
                       ? 'bg-pink-500 text-white border-pink-500'
@@ -211,26 +216,38 @@ export default function ProfilePage() {
           </button>
 
           {/* Actions */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-2">
+            <button
+              onClick={() => setShowSend(true)}
+              className="flex-1 py-2.5 text-center text-sm font-bold text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl shadow-md shadow-pink-200/50 active:scale-[0.98] transition"
+            >
+              send
+            </button>
             <a
               href={explorerAddressUrl(address)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 py-2.5 text-center text-sm font-bold text-pink-600 glass rounded-xl border border-pink-200 hover:bg-pink-50 transition"
             >
-              view on explorer
+              explorer
             </a>
             {!balanceLoading && balance !== null && parseFloat(balance) === 0 && (
               <a
                 href="https://faucet.tempo.xyz"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-2.5 text-center text-sm font-bold text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl shadow-md shadow-pink-200/50"
+                className="flex-1 py-2.5 text-center text-sm font-bold text-pink-600 glass rounded-xl border border-pink-200 hover:bg-pink-50 transition"
               >
-                get test funds
+                faucet
               </a>
             )}
           </div>
+          <button
+            onClick={exportWallet}
+            className="w-full py-2.5 text-center text-sm font-bold text-gray-600 glass rounded-xl border border-gray-200 hover:bg-gray-50 transition"
+          >
+            export private key
+          </button>
         </div>
       )}
 
@@ -248,6 +265,7 @@ export default function ProfilePage() {
 
       <CreateCircle isOpen={showCreateCircle} onClose={() => setShowCreateCircle(false)} onCreated={() => refreshData()} />
       <JoinCircle isOpen={showJoinCircle} onClose={() => setShowJoinCircle(false)} onJoined={() => refreshData()} />
+      <SendTokens isOpen={showSend} onClose={() => setShowSend(false)} />
     </div>
   );
 }

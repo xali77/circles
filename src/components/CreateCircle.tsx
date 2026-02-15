@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createCircle, getProfile } from '@/lib/store';
+import { getProfile, generateInviteCode } from '@/lib/store';
+import { apiCreateCircle } from '@/lib/api';
 import { Circle } from '@/lib/types';
 import EmojiPicker from './EmojiPicker';
 
@@ -16,14 +17,30 @@ export default function CreateCircle({ isOpen, onClose, onCreated }: Props) {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🏀');
 
-  const handleCreate = () => {
+  const [creating, setCreating] = useState(false);
+
+  const handleCreate = async () => {
     const profile = getProfile();
-    if (!name.trim() || !profile) return;
-    const circle = createCircle(name.trim(), emoji, profile);
-    onCreated(circle);
-    setName('');
-    setEmoji('🏀');
-    onClose();
+    if (!name.trim() || !profile || creating) return;
+    setCreating(true);
+    try {
+      const circle: Circle = {
+        id: `crc-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+        name: name.trim(),
+        emoji,
+        inviteCode: generateInviteCode(),
+        creatorAddress: profile.address,
+        members: [{ address: profile.address, name: profile.name, avatar: profile.avatar, joinedAt: Date.now() }],
+        createdAt: Date.now(),
+      };
+      const created = await apiCreateCircle(circle);
+      onCreated(created);
+      setName('');
+      setEmoji('🏀');
+      onClose();
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (

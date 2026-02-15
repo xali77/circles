@@ -13,7 +13,8 @@ import ProfileSetup from '@/components/ProfileSetup';
 import CreateCircle from '@/components/CreateCircle';
 import JoinCircle from '@/components/JoinCircle';
 import { FriendBet, UserProfile, Circle } from '@/lib/types';
-import { getProfile, getMyCircles } from '@/lib/store';
+import { getProfile } from '@/lib/store';
+import { fetchMyCircles } from '@/lib/api';
 import { useBalance } from '@/hooks/useBalance';
 
 export default function FeedPage() {
@@ -44,7 +45,7 @@ export default function FeedPage() {
       const existing = getProfile();
       if (existing && existing.address === address) {
         setProfile(existing);
-        setCircles(getMyCircles(address));
+        fetchMyCircles(address).then(setCircles).catch(console.error);
       } else {
         setNeedsSetup(true);
       }
@@ -52,7 +53,7 @@ export default function FeedPage() {
   }, [address]);
 
   const refreshCircles = () => {
-    if (address) setCircles(getMyCircles(address));
+    if (address) fetchMyCircles(address).then(setCircles).catch(console.error);
   };
 
   if (!ready || !authenticated) {
@@ -198,14 +199,14 @@ export default function FeedPage() {
         <BetModal
           friendBet={selectedBet}
           onClose={() => setSelectedBet(null)}
-          onBetPlaced={(bet) => { placeBet(bet); refreshBets(); setSelectedBet(null); }}
+          onBetPlaced={(bet) => { placeBet(bet).then(() => refreshBets()); setSelectedBet(null); }}
         />
       )}
 
       <CreateBet
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
-        onCreate={(bet) => createBet(bet)}
+        onCreate={(bet) => { createBet(bet); }}
         circles={circles}
       />
 
