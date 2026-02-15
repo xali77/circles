@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fce4ec;
+  --foreground: #1a1a2e;
 }
 
 @theme inline {
@@ -12,15 +12,64 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
+
+/* Layered gradient background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(233, 30, 99, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(156, 39, 176, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(255, 183, 77, 0.08) 0%, transparent 60%),
+    linear-gradient(135deg, #fce4ec 0%, #f3e5f5 40%, #e8eaf6 70%, #e0f7fa 100%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Hide scrollbar but keep scroll */
+body::-webkit-scrollbar { display: none; }
+body { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Card glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Fun bouncy animation for new items */
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+  60% { transform: scale(1.05) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.pop-in { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Smooth page transitions */
+main { animation: slideUp 0.3s ease-out; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Line clamp */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Safe area for PWA */
+.safe-bottom { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+
+/* Selection color */
+::selection { background: rgba(233, 30, 99, 0.2); }
