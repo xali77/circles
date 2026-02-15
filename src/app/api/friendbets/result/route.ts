@@ -1,10 +1,11 @@
-import { kv } from '@vercel/kv';
+import { getKV } from '@/lib/kv';
 import { NextRequest, NextResponse } from 'next/server';
 import { UserProfile } from '@/lib/types';
 
 // POST /api/friendbets/result — record bet result for a user
 export async function POST(req: NextRequest) {
   const { address, won, pnl }: { address: string; won: boolean; pnl: number } = await req.json();
+  const kv = getKV();
   const profile = await kv.get<UserProfile>(`profile:${address}`);
   if (!profile) return NextResponse.json({ error: 'profile not found' }, { status: 404 });
 

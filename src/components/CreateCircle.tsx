@@ -18,11 +18,13 @@ export default function CreateCircle({ isOpen, onClose, onCreated }: Props) {
   const [emoji, setEmoji] = useState('🏀');
 
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
 
   const handleCreate = async () => {
     const profile = getProfile();
     if (!name.trim() || !profile || creating) return;
     setCreating(true);
+    setError('');
     try {
       const circle: Circle = {
         id: `crc-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
@@ -38,6 +40,9 @@ export default function CreateCircle({ isOpen, onClose, onCreated }: Props) {
       setName('');
       setEmoji('🏀');
       onClose();
+    } catch (err) {
+      console.error('Failed to create circle:', err);
+      setError('failed to create circle — try again');
     } finally {
       setCreating(false);
     }
@@ -91,16 +96,20 @@ export default function CreateCircle({ isOpen, onClose, onCreated }: Props) {
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
 
+            {error && (
+              <p className="text-sm text-red-500 mt-3 bg-red-50 p-3 rounded-xl">{error}</p>
+            )}
+
             <button
               onClick={handleCreate}
-              disabled={!name.trim()}
+              disabled={!name.trim() || creating}
               className={`w-full mt-5 py-4 rounded-2xl font-bold text-lg transition-all ${
                 name.trim()
                   ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 text-white shadow-lg shadow-pink-300/40 active:scale-[0.98]'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >
-              create circle
+              {creating ? 'creating...' : 'create circle'}
             </button>
           </motion.div>
         </motion.div>

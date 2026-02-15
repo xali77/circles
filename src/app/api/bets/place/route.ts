@@ -1,10 +1,11 @@
-import { kv } from '@vercel/kv';
+import { getKV } from '@/lib/kv';
 import { NextRequest, NextResponse } from 'next/server';
 import { Bet, FriendBet, UserProfile } from '@/lib/types';
 
 // POST /api/bets/place — 3-way update: bets list + friendBet + profile stats
 export async function POST(req: NextRequest) {
   const bet: Bet = await req.json();
+  const kv = getKV();
 
   // 1. Add to global bets list
   const bets = await kv.get<Bet[]>('bets') ?? [];

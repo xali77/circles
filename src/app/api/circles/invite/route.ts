@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { getKV } from '@/lib/kv';
 import { NextRequest, NextResponse } from 'next/server';
 import { Circle } from '@/lib/types';
 
@@ -6,6 +6,8 @@ import { Circle } from '@/lib/types';
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')?.toUpperCase();
   if (!code) return NextResponse.json({ error: 'code required' }, { status: 400 });
+
+  const kv = getKV();
 
   // fast path: use the invite index
   const circleId = await kv.get<string>(`circle:invite:${code}`);

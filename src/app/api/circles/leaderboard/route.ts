@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { getKV } from '@/lib/kv';
 import { NextRequest, NextResponse } from 'next/server';
 import { Circle, UserProfile, LeaderboardEntry, Badge } from '@/lib/types';
 
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
   const circleId = req.nextUrl.searchParams.get('circleId');
   if (!circleId) return NextResponse.json({ error: 'circleId required' }, { status: 400 });
 
+  const kv = getKV();
   const circles = await kv.get<Circle[]>('circles') ?? [];
   const circle = circles.find((c) => c.id === circleId);
   if (!circle) return NextResponse.json([]);
