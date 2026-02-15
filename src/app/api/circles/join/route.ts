@@ -1,11 +1,9 @@
-import { getKV } from '@/lib/kv';
+import { kv } from '@/lib/kv';
 import { NextRequest, NextResponse } from 'next/server';
 import { Circle, CircleMember } from '@/lib/types';
 
-// POST /api/circles/join — join a circle
 export async function POST(req: NextRequest) {
   const { circleId, member }: { circleId: string; member: CircleMember } = await req.json();
-  const kv = getKV();
   const circles = await kv.get<Circle[]>('circles') ?? [];
   const circle = circles.find((c) => c.id === circleId);
   if (!circle) return NextResponse.json({ error: 'circle not found' }, { status: 404 });

@@ -1,4 +1,4 @@
-import { getKV } from '@/lib/kv';
+import { kv } from '@/lib/kv';
 import { NextRequest, NextResponse } from 'next/server';
 import { Circle, UserProfile, LeaderboardEntry, Badge } from '@/lib/types';
 
@@ -12,21 +12,18 @@ function getBadges(p: UserProfile): Badge[] {
   return badges;
 }
 
-// GET /api/circles/leaderboard?circleId=xxx
 export async function GET(req: NextRequest) {
   const circleId = req.nextUrl.searchParams.get('circleId');
   if (!circleId) return NextResponse.json({ error: 'circleId required' }, { status: 400 });
 
-  const kv = getKV();
   const circles = await kv.get<Circle[]>('circles') ?? [];
   const circle = circles.find((c) => c.id === circleId);
   if (!circle) return NextResponse.json([]);
 
-  // fetch profiles for all members
   const profileKeys = circle.members.map((m) => `profile:${m.address}`);
   if (profileKeys.length === 0) return NextResponse.json([]);
 
-  const profiles = await kv.mget<UserProfile[]>(...profileKeys);
+  const profiles = await kv.mget<UserProfile>(...profileKeys);
 
   const entries: LeaderboardEntry[] = profiles
     .filter((p): p is UserProfile => p !== null)

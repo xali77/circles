@@ -1,11 +1,9 @@
-import { getKV } from '@/lib/kv';
+import { kv } from '@/lib/kv';
 import { NextRequest, NextResponse } from 'next/server';
 import { FriendBet, Circle } from '@/lib/types';
 
-// GET /api/friendbets?address=0x... — get feed bets for user's circles
 export async function GET(req: NextRequest) {
   const address = req.nextUrl.searchParams.get('address');
-  const kv = getKV();
   const allFriendBets = await kv.get<FriendBet[]>('friendbets') ?? [];
 
   if (address) {
@@ -22,10 +20,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(allFriendBets);
 }
 
-// POST /api/friendbets — create a friend bet
 export async function POST(req: NextRequest) {
   const bet: FriendBet = await req.json();
-  const kv = getKV();
   const bets = await kv.get<FriendBet[]>('friendbets') ?? [];
   bets.unshift(bet);
   await kv.set('friendbets', bets);
